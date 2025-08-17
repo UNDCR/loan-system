@@ -3,6 +3,7 @@ import { ThemeProvider } from "next-themes";
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/components/providers/authProvider";
+import RecoveryRedirect from "@/components/auth/recoveryRedirect";
 
 export const metadata: Metadata = {
   title: "Firearm Suite",
@@ -21,6 +22,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         <AuthProvider>
+          <RecoveryRedirect />
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
