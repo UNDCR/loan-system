@@ -147,7 +147,7 @@ export interface AddressData {
 }
 
 export interface ClientData {
-  id?: string // Database UUID
+  id?: string
   fullName: string
   email: string
   phoneNumber: string
@@ -155,6 +155,8 @@ export interface ClientData {
   loansCount: number
   creditAmount?: number
   address?: AddressData
+  bookedOut?: boolean
+  bookedOutDate?: string | null
 }
 
 export type ClientResponse = {

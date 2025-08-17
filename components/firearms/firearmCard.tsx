@@ -41,7 +41,7 @@ export default function FirearmCard({
               </p>
             )}
           </div>
-          <Badge variant={!isBookedOut ? 'secondary' : 'destructive'} className="ml-2 shrink-0">
+          <Badge variant={!isBookedOut ? 'default' : 'destructive'} className="ml-2 shrink-0">
             <Package className="w-3 h-3 mr-1" />
             {!isBookedOut ? 'In Storage' : 'Booked Out'}
           </Badge>

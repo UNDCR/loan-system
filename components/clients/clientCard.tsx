@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Mail, Phone, IdCard, User, FolderOpen, Banknote, MapPin } from "lucide-react"
+import { Mail, Phone, IdCard, User, FolderOpen, Banknote, MapPin, Package } from "lucide-react"
 import { ClientData } from "@/lib/types"
 import { ClientEditDialog } from "@/components/clients/clientEditForm"
 
@@ -103,6 +103,22 @@ export function ClientCard({ client, onClientUpdated }: ClientCardProps) {
               </Button>
             }
           />
+        </div>
+        <div className="mt-4 flex justify-between items-start">
+          <div />
+          <div className="text-right space-y-1">
+            <div className="flex items-center justify-end">
+              <Badge variant={client.bookedOut ? "destructive" : "secondary"} className="px-2 py-0.5 text-xs">
+                <Package className="h-3 w-3 mr-1" />
+                {client.bookedOut ? "Booked Out" : "In Storage"}
+              </Badge>
+            </div>
+            {client.bookedOut && client.bookedOutDate && (
+              <div className="text-[11px] text-muted-foreground">
+                {new Date(client.bookedOutDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

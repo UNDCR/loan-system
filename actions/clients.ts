@@ -110,14 +110,30 @@ export async function fetchClients(params?: { page?: number; limit?: number; sea
   if (params?.search) query.set("search", params.search);
   const base = "/customers";
   const suffix = query.size ? `?${query.toString()}&include=address` : `?include=address`;
-  const [customersRes, loansRes] = await Promise.all([
+  const [customersRes, loansRes, firearmsRes] = await Promise.all([
     apiFetch<CustomerRow[]>(`${base}${suffix}`),
     apiFetch<{ id: string; customer_id: string | null }[]>("/loans"),
+    // fetch firearms to determine per-customer booked out status/date
+    apiFetch<Array<{ id: string; customers_id: string | null; booked_out: boolean | null; booked_out_date: string | null; created_at: string }>>("/firearms"),
   ]);
 
   const customers = customersRes.ok && customersRes.data ? customersRes.data : [];
   const pagination = { page: params?.page ?? 1, limit: params?.limit ?? 50, total: customers.length, totalPages: Math.ceil(customers.length / (params?.limit ?? 50)) };
   const loans = loansRes.ok && loansRes.data ? loansRes.data : [];
+  const firearms = firearmsRes.ok && firearmsRes.data ? firearmsRes.data : [];
+
+  // Build a map of customer_id -> { bookedOut, bookedOutDate } preferring most recent booked_out_date
+  const firearmMap = new Map<string, { bookedOut: boolean; bookedOutDate: string | null }>();
+  const latestDateMap = new Map<string, number>();
+  for (const f of firearms) {
+    if (!f.customers_id) continue;
+    const ts = f.booked_out_date ? Date.parse(f.booked_out_date) : Date.parse(f.created_at);
+    const prevTs = latestDateMap.get(f.customers_id) ?? -Infinity;
+    if (ts >= prevTs) {
+      latestDateMap.set(f.customers_id, ts);
+      firearmMap.set(f.customers_id, { bookedOut: !!f.booked_out, bookedOutDate: f.booked_out_date });
+    }
+  }
   const counts = new Map<string, number>();
   for (const l of loans) {
     if (!l.customer_id) continue;
@@ -142,7 +158,8 @@ export async function fetchClients(params?: { page?: number; limit?: number; sea
         postalCode: addr.postal_code,
         country: addr.country,
       };
-    })()
+    })(),
+    ...(firearmMap.has(c.id) ? { bookedOut: firearmMap.get(c.id)!.bookedOut, bookedOutDate: firearmMap.get(c.id)!.bookedOutDate } : {})
   }));
 
   if (params?.sortCredit) {
