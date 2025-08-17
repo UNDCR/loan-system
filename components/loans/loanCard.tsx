@@ -57,7 +57,7 @@ export default function LoanCard({ loan }: { loan: LoanData }) {
   }
 
   return (
-    <Card className="w-full bg-white dark:bg-stone-900/95">
+    <Card className="bg-white dark:bg-stone-900/70">
       <div className={`p-6 ${getStatusColor(loan.status)}`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -73,7 +73,6 @@ export default function LoanCard({ loan }: { loan: LoanData }) {
       </div>
 
       <CardContent className="p-6 space-y-6">
-        {/* Loan Progress */}
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-foreground">Loan Progress</span>

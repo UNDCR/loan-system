@@ -82,15 +82,18 @@ export function ClientEditDialog({ client, open, onOpenChange, onSave, trigger }
     try {
       const clientData = {
         id: form.id,
-        id_number: form.idNumber,
-        full_name: form.fullName,
-        phone_number: form.phoneNumber,
-        email: form.email || undefined,
-        street_name: form.streetName,
-        town: form.town,
-        province: form.province,
-        postal_code: form.postalCode,
-        country: form.country
+        full_name: form.fullName || undefined,
+        id_number: form.idNumber ? form.idNumber : null,
+        phone_number: form.phoneNumber ? form.phoneNumber : null,
+        email: form.email ? form.email : null,
+        address: {
+          id: client.address?.id ?? null,
+          street_name: form.streetName,
+          town: form.town,
+          province: form.province ? form.province : null,
+          postal_code: form.postalCode ? form.postalCode : null,
+          country: form.country ? form.country : null,
+        },
       }
       
       const result = await submitClientForm(clientData)
@@ -100,24 +103,8 @@ export function ClientEditDialog({ client, open, onOpenChange, onSave, trigger }
       }
 
       toast.success("Client updated successfully")
-      
-      const updatedClient: ClientData = {
-        ...client,
-        id: form.id,
-        fullName: form.fullName,
-        email: form.email || '',
-        phoneNumber: form.phoneNumber,
-        idNumber: form.idNumber,
-        address: {
-          streetName: form.streetName,
-          town: form.town,
-          province: form.province,
-          postalCode: form.postalCode,
-          country: form.country
-        }
-      }
-      
-      onSave?.(updatedClient)
+
+      onSave?.(client)
       onOpenChange?.(false)
       router.refresh()
     } catch (error) {

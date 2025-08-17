@@ -14,7 +14,7 @@ interface ClientCardProps {
 export function ClientCard({ client, onClientUpdated }: ClientCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false)
   return (
-    <Card className="bg-white dark:bg-stone-900/95">
+    <Card className="bg-white dark:bg-stone-900/70">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2 min-w-0">

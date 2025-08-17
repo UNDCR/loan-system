@@ -54,15 +54,17 @@ export function CreateClientDialog({ trigger, onClientCreated }: CreateClientDia
     setIsLoading(true)
     try {
       const result = await createClient({
-        id_number: formData.idNumber,
         full_name: formData.fullName,
+        id_number: formData.idNumber,
         phone_number: formData.phone,
-        email: formData.email || undefined,
-        street_name: formData.street,
-        town: formData.town,
-        province: formData.province,
-        postal_code: formData.postalCode,
-        country: formData.country
+        email: formData.email ? formData.email : null,
+        address: {
+          street_name: formData.street,
+          town: formData.town,
+          province: formData.province,
+          postal_code: formData.postalCode,
+          country: formData.country,
+        },
       })
 
       if (!result.success) {
@@ -83,7 +85,6 @@ export function CreateClientDialog({ trigger, onClientCreated }: CreateClientDia
         country: ""
       })
       
-      // Refresh the clients list
       if (onClientCreated) {
         onClientCreated()
       } else {

@@ -399,8 +399,34 @@ export interface CreateClientData {
   country: string;
 }
 
-export interface SubmitClientFormData extends CreateClientData {
+export interface CreateClientRequest {
+  full_name: string;
+  id_number: string;
+  phone_number: string;
+  email?: string | null;
+  address: {
+    street_name: string;
+    town: string;
+    province: string;
+    postal_code: string;
+    country: string;
+  };
+}
+
+export interface SubmitClientFormData {
   id: string;
+  full_name?: string;
+  id_number?: string | null;
+  phone_number?: string | null;
+  email?: string | null;
+  address?: {
+    id?: string | null;
+    street_name: string;
+    town: string;
+    province?: string | null;
+    postal_code?: string | null;
+    country?: string | null;
+  };
 }
 
 export type FirearmWithRelations = {

@@ -30,7 +30,7 @@ export default function FirearmCard({
   }
 
   return (
-    <Card className="w-full max-w-lg mx-auto shadow-lg hover:shadow-xl transition-shadow">
+    <Card className="bg-white dark:bg-stone-800">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div>

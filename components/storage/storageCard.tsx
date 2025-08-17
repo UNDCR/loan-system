@@ -43,7 +43,7 @@ export function StorageCard({ entry, onDeleted }: { entry: StorageEntry; onDelet
   }
 
   return (
-    <Card className="w-full max-w-lg mx-auto shadow">
+    <Card className="bg-white dark:bg-stone-900/70">
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div>

@@ -35,7 +35,9 @@ function PaymentRow({ item }: { item: PaymentHistoryItem }) {
 }
 
 export async function LatestLoanPayments({ page = 1, limit = 5 }: LatestLoanPaymentsProps) {
-  const { data, pagination } = await fetchLoanPaymentHistory({ page, limit, includeLoan: true, date_order: "desc" });
+  const max = 5;
+  const effectiveLimit = Math.min(limit ?? max, max);
+  const { data, pagination } = await fetchLoanPaymentHistory({ page, limit: effectiveLimit, includeLoan: true, date_order: "desc" });
   const items: PaymentHistoryItem[] = Array.isArray(data) ? data : [];
 
   return (
@@ -43,7 +45,7 @@ export async function LatestLoanPayments({ page = 1, limit = 5 }: LatestLoanPaym
       <CardHeader>
         <CardTitle>Latest Loan Payments</CardTitle>
         <CardDescription>
-          Showing {items.length} of {pagination.total}
+          Showing {Math.min(items.length, 5)} of {pagination.total}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -51,7 +53,7 @@ export async function LatestLoanPayments({ page = 1, limit = 5 }: LatestLoanPaym
           <div className="text-sm text-muted-foreground">No recent loan payments</div>
         ) : (
           <div className="divide-y divide-stone-800">
-            {items.map((item) => (
+            {items.slice(0, 5).map((item) => (
               <PaymentRow key={item.id} item={item} />
             ))}
           </div>

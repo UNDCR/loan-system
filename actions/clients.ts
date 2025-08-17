@@ -1,7 +1,7 @@
 "use server"
 
 import { apiFetch } from "./api";
-import type { ClientData, CreateClientData, CustomerRow, SubmitClientFormData } from "@/lib/types";
+import type { ClientData, CreateClientRequest, CreateClientData, CustomerRow, SubmitClientFormData } from "@/lib/types";
 
 export async function submitClientForm(clientData: SubmitClientFormData): Promise<{ success: boolean; error?: string }> {
   try {
@@ -31,7 +31,7 @@ export async function submitClientForm(clientData: SubmitClientFormData): Promis
   }
 }
 
-export async function createClient(clientData: CreateClientData): Promise<{ success: boolean; error?: string }> {
+export async function createClient(clientData: CreateClientRequest): Promise<{ success: boolean; error?: string }> {
   try {
     const response = await apiFetch<ClientData>("/customers", {
       method: "POST",
