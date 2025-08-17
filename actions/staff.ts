@@ -67,7 +67,7 @@ export type InviteUserPayload = {
 
 export async function inviteUser(payload: InviteUserPayload): Promise<{ success: boolean; error?: string }> {
   try {
-    const redirectTo = payload.redirectTo ?? `${process.env.NEXT_APP_URL}/auth/set-password`
+    const redirectTo = payload.redirectTo ?? `${process.env.NEXT_PUBLIC_SITE_URL}/auth/set-password`
     const res = await apiFetch(`/admin/invite-user`, {
       method: "POST",
       body: JSON.stringify({
