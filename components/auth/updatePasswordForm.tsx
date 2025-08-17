@@ -28,6 +28,15 @@ export function UpdatePasswordForm({
 
   useEffect(() => {
     let active = true;
+    if (typeof window !== "undefined" && !session) {
+      const hash = window.location.hash.startsWith("#") ? window.location.hash.substring(1) : window.location.hash;
+      const params = new URLSearchParams(hash);
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token");
+      if (access_token && refresh_token) {
+        supabase.auth.setSession({ access_token, refresh_token });
+      }
+    }
     (async () => {
       const { data } = await supabase.auth.getSession();
       if (!active) return;
@@ -42,7 +51,7 @@ export function UpdatePasswordForm({
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, session]);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
