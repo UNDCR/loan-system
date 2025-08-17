@@ -36,7 +36,6 @@ export default function ProtectedLayout({
       <div className="flex-1 flex flex-col min-h-screen md:pl-64">
         <header className="fixed top-0 right-0 left-0 md:left-64 h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10">
           <div className="flex h-full items-center justify-between px-4 lg:px-6">
-            <h1 className="text-lg font-semibold">Gunnery Arms & Ammo</h1>
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
