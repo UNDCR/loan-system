@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function UpdatePasswordForm({
   className,
@@ -22,8 +22,27 @@ export function UpdatePasswordForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [ready, setReady] = useState(false);
   const router = useRouter();
-  const { updatePassword } = useAuth();
+  const { updatePassword, supabase, session, isLoading: authLoading } = useAuth();
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!active) return;
+      setReady(!!data.session);
+    })();
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+      setReady(!!sess);
+    });
+
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,9 +50,12 @@ export function UpdatePasswordForm({
     setError(null);
 
     try {
+      if (!session) {
+        setError("Reset link is invalid or has expired. Please request a new email.");
+        return;
+      }
       await updatePassword(password);
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push("/protected");
+      router.push("/dashboard");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -62,10 +84,17 @@ export function UpdatePasswordForm({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={!ready || authLoading}
                 />
               </div>
+              {!ready && !authLoading && (
+                <p className="text-sm text-muted-foreground">
+                  Waiting for recovery session. If this page was not opened from your email link,
+                  request a new password reset email.
+                </p>
+              )}
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || !ready}>
                 {isLoading ? "Saving..." : "Save new password"}
               </Button>
             </div>
@@ -75,3 +104,4 @@ export function UpdatePasswordForm({
     </div>
   );
 }
+
