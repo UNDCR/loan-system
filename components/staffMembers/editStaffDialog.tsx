@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Staff } from "./staffCard"
-import { updateStaff } from "@/actions/staff"
+import { updateStaff } from "@/actions/admin"
 
 export function EditStaffDialog({ trigger, staff, open, onOpenChange, onSave }: EditStaffDialogProps) {
   const [fullName, setFullName] = useState("")

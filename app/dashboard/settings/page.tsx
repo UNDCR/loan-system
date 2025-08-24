@@ -3,8 +3,11 @@ import ResetPasswordButton from "@/components/settings/resetPasswordButton";
 import PhoneNumberForm from "@/components/settings/phoneNumberForm";
 import UserInfo from "@/components/settings/userInfo";
 import ImageUpload from "@/components/settings/imageUpload";
+import CompanySettingsForm from "@/components/settings/companySettingsForm";
+import { getSettings } from "@/actions/settings";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const { data: settings } = await getSettings();
   return (
     <div className="space-y-6 mt-10">
       <Card>
@@ -14,6 +17,16 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <UserInfo />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Company Settings</CardTitle>
+          <CardDescription>Manage company information.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <CompanySettingsForm initial={settings ?? null} />
         </CardContent>
       </Card>
 

@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { fetchStaff } from "@/actions/staff"
+import { fetchStaff } from "@/actions/admin"
 import { StaffClient } from "@/components/staffMembers/staffClient"
 
 export const metadata: Metadata = {

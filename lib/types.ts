@@ -552,3 +552,38 @@ export interface StorageEntry {
     status: string | null;
   } | null;
 }
+
+export type ApiResponse<T> = {
+  success: boolean
+  data?: T
+  pagination?: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+export type ErrorResponse = {
+  success?: false
+  error?: string
+}
+
+export type SettingsRecord = {
+  id: string
+  company_name: string | null
+  company_email: string | null
+  company_number: string | null
+  company_logo: string | null
+  company_url: string | null
+  created_at: string
+  updated_at: string | null
+}
+
+export type SettingsCreateInput = {
+  company_name?: string | null
+  company_email?: string | null
+  company_number?: string | null
+  company_logo?: string | null
+  company_url?: string | null
+}

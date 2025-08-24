@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useActionState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { uploadImageFormAction, type ActionState } from "@/actions/settings";
+import { ActionState } from "@/actions/admin";
+import { uploadImageFormAction } from "@/actions/images";
 
 export default function ImageUpload() {
   const [file, setFile] = useState<File | null>(null);

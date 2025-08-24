@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { fetchStaff } from "@/actions/staff";
+import { fetchStaff } from "@/actions/admin";
 
 type Profile = { fullName: string; idNumber: string };
 
