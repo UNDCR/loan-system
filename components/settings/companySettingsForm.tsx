@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { SettingsRecord } from "@/lib/types";
 import { setSettingsFormAction } from "@/actions/settings";
 import { useActionState } from "react";
-import ImageUpload from "@/components/settings/imageUpload";
 import { toast } from "sonner";
 
 type CompanyState = {
@@ -16,7 +14,6 @@ type CompanyState = {
   email: string;
   phone: string;
   url: string;
-  logoUrl: string;
 };
 
 type Props = {
@@ -24,7 +21,7 @@ type Props = {
 };
 
 export default function CompanySettingsForm({ initial: initialRecord }: Props) {
-  const [initial, setInitial] = useState<CompanyState>({ name: "", email: "", phone: "", url: "", logoUrl: "" });
+  const [initial, setInitial] = useState<CompanyState>({ name: "", email: "", phone: "", url: "" });
   const [form, setForm] = useState<CompanyState>(initial);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -36,7 +33,6 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
         email: initialRecord.company_email ?? "",
         phone: initialRecord.company_number ?? "",
         url: initialRecord.company_url ?? "",
-        logoUrl: initialRecord.company_logo ?? "",
       };
       setInitial(mapped);
       setForm(mapped);
@@ -48,8 +44,7 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
       form.name.trim() !== initial.name.trim() ||
       form.email.trim() !== initial.email.trim() ||
       form.phone.trim() !== initial.phone.trim() ||
-      form.url.trim() !== initial.url.trim() ||
-      form.logoUrl.trim() !== initial.logoUrl.trim();
+      form.url.trim() !== initial.url.trim();
     const requiredValid = form.name.trim().length > 0 && form.email.trim().length > 0;
     return editing && changed && requiredValid && !saving;
   }, [editing, form, initial, saving]);
@@ -74,7 +69,7 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
     fd.set("company_email", form.email);
     fd.set("company_number", form.phone);
     fd.set("company_url", form.url);
-    fd.set("company_logo", form.logoUrl);
+    fd.set("company_logo", initialRecord?.company_logo ?? "");
     startTransition(() => {
       formAction(fd);
     });
@@ -87,7 +82,6 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
         email: state.data.company_email ?? "",
         phone: state.data.company_number ?? "",
         url: state.data.company_url ?? "",
-        logoUrl: state.data.company_logo ?? "",
       };
       setInitial(mapped);
       setForm(mapped);
@@ -148,23 +142,7 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-[180px_1fr] items-start">
-        <div className="flex items-center justify-center rounded-md border bg-muted/30 p-2 min-h-24">
-          {form.logoUrl ? (
-            <Image src={form.logoUrl} alt="Company logo" width={160} height={80} className="object-contain" />
-          ) : (
-            <span className="text-xs text-muted-foreground">No logo</span>
-          )}
-        </div>
-        <div className="grid gap-2">
-          <Label>Company Logo</Label>
-          <ImageUpload
-            onUploaded={(url) => setForm((s) => ({ ...s, logoUrl: url }))}
-            disabled={!editing}
-          />
-          <p className="text-xs text-muted-foreground">Use a small PNG for best results.</p>
-        </div>
-      </div>
+      
 
       <div className="flex gap-2">
         {!editing && (
