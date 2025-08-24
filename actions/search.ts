@@ -31,7 +31,6 @@ export async function searchClients(criteria: SearchCriteria): Promise<SearchRes
     const term = (criteria.full_name ?? criteria.id_number ?? "").trim();
     if (!term) return { success: true, data: [] };
 
-    // Use the working /customers endpoint instead of the broken /search endpoint
     const { data } = await fetchClients({ page: 1, limit: 50, search: term });
     return { success: true, data };
   } catch (error) {
@@ -69,7 +68,6 @@ export async function searchLoans(criteria: SearchCriteria): Promise<SearchResul
       })
     );
 
-    // If the search rows only returned firearms_id (no loan_id), fetch loans via firearm relations
     const loansFromFirearms = await Promise.all(
       Array.from(firearmIdsNeedingLookup).map(async (fid) => {
         const firearmRes = await apiFetch<FirearmWithRelations>(`/firearms/${encodeURIComponent(fid)}?include=customers,loans`);
@@ -109,7 +107,6 @@ export async function searchLoans(criteria: SearchCriteria): Promise<SearchResul
       })
     );
 
-    // If we only have customer_id, fetch loans by customer_search
     const loansFromCustomers = await Promise.all(
       Array.from(customerIdsNeedingLookup).map(async (cid) => {
         const listRes = await apiFetch<EnrichedLoan[]>(`/loans?include=customer,firearm&customer_search=${encodeURIComponent(cid)}`);
@@ -124,7 +121,6 @@ export async function searchLoans(criteria: SearchCriteria): Promise<SearchResul
       ...loansFromCustomers.flat(),
     ];
 
-    // De-duplicate by loan id
     const uniqueById = new Map<string, EnrichedLoan>();
     for (const l of mergedLoans) {
       if (l && l.id) uniqueById.set(l.id, l);

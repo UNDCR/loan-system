@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Staff } from "./staffCard"
-import { inviteUser } from "@/actions/staff"
+import { inviteUser } from "@/actions/admin"
 import { toast } from "sonner"
 
 export function InviteStaffDialog({ trigger, onInvite, open, onOpenChange }: InviteStaffDialogProps) {
