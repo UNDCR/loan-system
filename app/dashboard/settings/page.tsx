@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import ResetPasswordButton from "@/components/settings/resetPasswordButton";
 import PhoneNumberForm from "@/components/settings/phoneNumberForm";
 import UserInfo from "@/components/settings/userInfo";
+import CompanyLogoUploader from "@/components/settings/companyLogoUploader";
 import CompanySettingsForm from "@/components/settings/companySettingsForm";
 import { getSettings } from "@/actions/settings";
 
@@ -15,7 +16,12 @@ export default async function SettingsPage() {
           <CardDescription>Your personal details associated with this account.</CardDescription>
         </CardHeader>
         <CardContent>
-          <UserInfo />
+          <div className="grid gap-6 md:grid-cols-2">
+            <UserInfo />
+            <div>
+              <CompanyLogoUploader initialUrl={settings?.company_logo ?? null} />
+            </div>
+          </div>
         </CardContent>
       </Card>
 
