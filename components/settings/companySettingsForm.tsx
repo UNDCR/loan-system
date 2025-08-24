@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import type { SettingsRecord } from "@/lib/types";
 import { setSettingsFormAction } from "@/actions/settings";
 import { useActionState } from "react";
+import ImageUpload from "@/components/settings/imageUpload";
+import { toast } from "sonner";
 
 type CompanyState = {
   name: string;
@@ -26,7 +28,6 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
   const [form, setForm] = useState<CompanyState>(initial);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (initialRecord) {
@@ -54,7 +55,6 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
   }, [editing, form, initial, saving]);
 
   const onEdit = () => {
-    setSaved(false);
     setForm(initial);
     setEditing(true);
   };
@@ -62,7 +62,6 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
   const onCancel = () => {
     setForm(initial);
     setEditing(false);
-    setSaved(false);
   };
 
   const [state, formAction, isPending] = useActionState(setSettingsFormAction, {});
@@ -70,7 +69,6 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
 
   const onSave = () => {
     setSaving(true);
-    setSaved(false);
     const fd = new FormData();
     fd.set("company_name", form.name);
     fd.set("company_email", form.email);
@@ -94,11 +92,12 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
       setInitial(mapped);
       setForm(mapped);
       setEditing(false);
-      setSaved(true);
       setSaving(false);
+      toast.success("Settings saved");
     }
     if (state && state.error) {
       setSaving(false);
+      toast.error(state.error);
     }
   }, [state]);
 
@@ -158,14 +157,10 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
           )}
         </div>
         <div className="grid gap-2">
-          <Label htmlFor="company-logo">Company Logo URL</Label>
-          <Input
-            id="company-logo"
-            type="url"
-            value={form.logoUrl}
-            onChange={(e) => setForm((s) => ({ ...s, logoUrl: e.target.value }))}
+          <Label>Company Logo</Label>
+          <ImageUpload
+            onUploaded={(url) => setForm((s) => ({ ...s, logoUrl: url }))}
             disabled={!editing}
-            placeholder="Paste a public image URL"
           />
           <p className="text-xs text-muted-foreground">Use a small PNG for best results.</p>
         </div>
@@ -190,7 +185,6 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
       </div>
 
       {state && state.error && <p className="text-sm text-red-600">{state.error}</p>}
-      {saved && <p className="text-sm text-green-600">Saved</p>}
     </div>
   );
 }
