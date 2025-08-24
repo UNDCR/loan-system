@@ -15,22 +15,21 @@ export default function PhoneNumberForm() {
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
     (async () => {
       setError(null);
       const { data, error } = await supabase.auth.getUser();
+      if (!active) return;
       if (error) {
-        if (!isMounted) return;
         setError(error.message);
         return;
       }
       const currentPhone = (data.user?.user_metadata?.phone as string) || "";
-      if (!isMounted) return;
       setPhone(currentPhone);
       setInitialPhone(currentPhone);
     })();
     return () => {
-      isMounted = false;
+      active = false;
     };
   }, [supabase]);
 
@@ -40,7 +39,6 @@ export default function PhoneNumberForm() {
     setError(null);
     setSuccess(null);
     try {
-      // Basic normalization: keep digits only
       const normalized = phone.replace(/[^0-9+]/g, "");
       const { error } = await supabase.auth.updateUser({
         data: { phone: normalized },

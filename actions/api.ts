@@ -19,13 +19,15 @@ function apiBase(): string {
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<{ ok: boolean; status: number; data?: T; error?: string; success?: boolean }> {
   const token = await getAccessToken();
   const fullPath = path.startsWith('/api/v1') ? path : `/api/v1${path}`;
+
+  const isFormData = init?.body instanceof FormData;
+  const headers = new Headers(init?.headers as HeadersInit | undefined);
+  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (!isFormData) headers.set("Content-Type", "application/json");
+
   const res = await fetch(`${apiBase()}${fullPath}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers,
     cache: "no-store",
   });
   const status = res.status;

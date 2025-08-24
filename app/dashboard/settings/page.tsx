@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import ResetPasswordButton from "@/components/settings/resetPasswordButton";
 import PhoneNumberForm from "@/components/settings/phoneNumberForm";
 import UserInfo from "@/components/settings/userInfo";
+import ImageUpload from "@/components/settings/imageUpload";
 
 export default function SettingsPage() {
   return (
@@ -37,6 +38,16 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload Image</CardTitle>
+          <CardDescription>PNG only. Max size 500KB.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ImageUpload />
+        </CardContent>
+      </Card>
     </div>
   );
 }
