@@ -1,10 +1,20 @@
 "use server"
 
 import { apiFetch } from "./api";
-import { EnrichedLoan, LoanTrendPoint } from "@/lib/types";
+import { EnrichedLoan, LoanTrendPoint, DashboardSummaryResponse } from "@/lib/types";
 
 export type LatestPayment = { full_name: string | null; amount: number; created_at: string };
 export type PendingLoan = { full_name: string | null; status: "Pending Payment"; remaining_amount: number | null };
+
+export interface CreditPaymentHistoryItem {
+  id: string;
+  payment_amount: number;
+  created_at: string;
+  payment_date?: string;
+  customer_name?: string | null;
+  customer_id_number?: string | null;
+  payment_type?: string | null;
+}
 
 export async function fetchLatestPayments(): Promise<LatestPayment[]> {
   const res = await apiFetch<LatestPayment[]>("/loans?status=Paid&include=customer&limit=10");
@@ -14,6 +24,73 @@ export async function fetchLatestPayments(): Promise<LatestPayment[]> {
 export async function fetchPendingLoans(): Promise<PendingLoan[]> {
   const res = await apiFetch<PendingLoan[]>("/loans?status=Pending Payment&include=customer");
   return res.ok && res.data ? res.data : [];
+}
+
+export async function fetchDashboardSummary(): Promise<DashboardSummaryResponse | null> {
+  const res = await apiFetch<DashboardSummaryResponse["data"]>("/dashboard/summary");
+  if (!res.ok || !res.data) return null;
+  return {
+    success: true,
+    data: res.data
+  };
+}
+
+type FetchCreditPaymentHistoryParams = {
+  page?: number;
+  limit?: number;
+  includeCustomer?: boolean;
+  date_order?: "asc" | "desc";
+};
+
+export async function fetchCreditPaymentHistory(params?: FetchCreditPaymentHistoryParams): Promise<{
+  data: CreditPaymentHistoryItem[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}> {
+  const query = new URLSearchParams();
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.limit) query.set("limit", String(params.limit));
+  if (params?.includeCustomer) query.set("include", "customer");
+  if (params?.date_order) query.set("date_order", params.date_order);
+
+  const base = "/customers/payment-history";
+  const path = query.size ? `${base}?${query.toString()}` : base;
+
+  type APIItem = {
+    id: string;
+    credit_amount: number;
+    created_at: string;
+    payment_type?: string | null;
+    customers?: {
+      id: string;
+      full_name: string;
+      id_number: string;
+    } | null;
+  };
+
+  const res = await apiFetch<APIItem[] | { items: APIItem[] }>(path);
+  if (!res.ok) return { data: [], pagination: { page: params?.page ?? 1, limit: params?.limit ?? 10, total: 0, totalPages: 0 } };
+
+  const rawItems: APIItem[] = Array.isArray(res.data)
+    ? (res.data as APIItem[])
+    : (res.data && typeof res.data === "object" && "items" in res.data
+        ? (res.data as { items: APIItem[] }).items
+        : []);
+
+  const items: CreditPaymentHistoryItem[] = rawItems.map((i) => ({
+    id: i.id,
+    payment_amount: i.credit_amount,
+    created_at: i.created_at,
+    payment_type: i.payment_type,
+    customer_name: i.customers?.full_name ?? null,
+    customer_id_number: i.customers?.id_number ?? null,
+  }));
+
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 10;
+  const total = (res as unknown as { data?: unknown; pagination?: { total?: number } }).pagination?.total ?? items.length;
+  const totalPages = (res as unknown as { data?: unknown; pagination?: { totalPages?: number } }).pagination?.totalPages ?? Math.ceil(total / limit);
+
+  return { data: items, pagination: { page, limit, total, totalPages } };
 }
 
 export async function fetchLoanTrends(): Promise<{ success: true; data: LoanTrendPoint[] } | { success: false; error: string }> {
