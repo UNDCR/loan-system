@@ -35,6 +35,8 @@ export async function setSettingsFormAction(_prev: SettingsActionState, formData
   const number = (formData.get("company_number") as string | null) ?? null
   const url = (formData.get("company_url") as string | null) ?? null
   const providedLogoUrl = (formData.get("company_logo") as string | null) ?? null
+  const storageFeeStr = (formData.get("storage_fee") as string | null) ?? null
+  const storageFee = storageFeeStr && storageFeeStr.trim() !== "" ? Number(storageFeeStr) : null
 
   const logoFile = formData.get("logo_file")
 
@@ -44,6 +46,7 @@ export async function setSettingsFormAction(_prev: SettingsActionState, formData
     company_number: number,
     company_logo: providedLogoUrl,
     company_url: url,
+    storage_fee: storageFee,
   }
   const firstRes = await setSettings(firstPayload)
   if (!firstRes.success) return { success: false, error: firstRes.error }

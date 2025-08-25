@@ -576,6 +576,7 @@ export type SettingsRecord = {
   company_number: string | null
   company_logo: string | null
   company_url: string | null
+  storage_fee?: number | null
   created_at: string
   updated_at: string | null
 }
@@ -586,4 +587,5 @@ export type SettingsCreateInput = {
   company_number?: string | null
   company_logo?: string | null
   company_url?: string | null
+  storage_fee?: number | null
 }
