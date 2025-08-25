@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ChartAreaInteractive } from "@/components/dashboard/areaChart";
 import { fetchLoanTrends } from "@/actions/dashboard";
 import { LatestLoanPayments } from "@/components/dashboard/latestLoanPayments";
+import { LatestCreditPayments } from "@/components/dashboard/latestCreditPayments";
 
 export default async function ProtectedPage() {
   const supabase = await createClient();
@@ -20,8 +21,9 @@ export default async function ProtectedPage() {
       <div className="w-full">
         <ChartAreaInteractive data={trends.success ? trends.data : []} />
       </div>
-      <div className="w-full">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
         <LatestLoanPayments limit={5} />
+        <LatestCreditPayments limit={5} />
       </div>
     </div>
   );

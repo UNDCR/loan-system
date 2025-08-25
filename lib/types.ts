@@ -523,6 +523,36 @@ export type StorageItemResponse = {
   } | null;
 };
 
+export interface DashboardSummaryResponse {
+  success: boolean;
+  data: {
+    totalPayments: number;
+    totalAmount: number;
+    paymentsByType: Record<string, {
+      count: number;
+      amount: number;
+    }>;
+    recentPayments: Array<{
+      id: string;
+      created_at: string;
+      credit_amount: number;
+      profile_id: string | null;
+      customers_id: string | null;
+      payment_type: string | null;
+      customers: {
+        id: string;
+        full_name: string;
+        created_at: string;
+      } | null;
+      profiles: {
+        id: string;
+        full_name: string;
+        created_at: string;
+      } | null;
+    }>;
+  };
+}
+
 export interface StorageEntry {
   id: string;
   storageType: string;
@@ -576,6 +606,7 @@ export type SettingsRecord = {
   company_number: string | null
   company_logo: string | null
   company_url: string | null
+  storage_fee?: number | null
   created_at: string
   updated_at: string | null
 }
@@ -586,4 +617,5 @@ export type SettingsCreateInput = {
   company_number?: string | null
   company_logo?: string | null
   company_url?: string | null
+  storage_fee?: number | null
 }

@@ -14,6 +14,7 @@ type CompanyState = {
   email: string;
   phone: string;
   url: string;
+  storageFee: string;
 };
 
 type Props = {
@@ -21,18 +22,20 @@ type Props = {
 };
 
 export default function CompanySettingsForm({ initial: initialRecord }: Props) {
-  const [initial, setInitial] = useState<CompanyState>({ name: "", email: "", phone: "", url: "" });
+  const [initial, setInitial] = useState<CompanyState>({ name: "", email: "", phone: "", url: "", storageFee: "" });
   const [form, setForm] = useState<CompanyState>(initial);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (initialRecord) {
+      const storageFeeValue = initialRecord.storage_fee ?? initialRecord.storage_fee ?? null;
       const mapped: CompanyState = {
         name: initialRecord.company_name ?? "",
         email: initialRecord.company_email ?? "",
         phone: initialRecord.company_number ?? "",
         url: initialRecord.company_url ?? "",
+        storageFee: storageFeeValue?.toString() ?? "",
       };
       setInitial(mapped);
       setForm(mapped);
@@ -44,9 +47,11 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
       form.name.trim() !== initial.name.trim() ||
       form.email.trim() !== initial.email.trim() ||
       form.phone.trim() !== initial.phone.trim() ||
-      form.url.trim() !== initial.url.trim();
+      form.url.trim() !== initial.url.trim() ||
+      form.storageFee.trim() !== initial.storageFee.trim();
     const requiredValid = form.name.trim().length > 0 && form.email.trim().length > 0;
-    return editing && changed && requiredValid && !saving;
+    const storageFeeValid = form.storageFee.trim() === "" || !isNaN(Number(form.storageFee.trim()));
+    return editing && changed && requiredValid && storageFeeValid && !saving;
   }, [editing, form, initial, saving]);
 
   const onEdit = () => {
@@ -70,6 +75,7 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
     fd.set("company_number", form.phone);
     fd.set("company_url", form.url);
     fd.set("company_logo", initialRecord?.company_logo ?? "");
+    fd.set("storage_fee", form.storageFee.trim() === "" ? "" : form.storageFee);
     startTransition(() => {
       formAction(fd);
     });
@@ -77,11 +83,13 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
 
   useEffect(() => {
     if (state && state.success && state.data) {
+      const storageFeeValue = state.data.storage_fee ?? state.data.storage_fee ?? null;
       const mapped: CompanyState = {
         name: state.data.company_name ?? "",
         email: state.data.company_email ?? "",
         phone: state.data.company_number ?? "",
         url: state.data.company_url ?? "",
+        storageFee: storageFeeValue?.toString() ?? "",
       };
       setInitial(mapped);
       setForm(mapped);
@@ -138,6 +146,18 @@ export default function CompanySettingsForm({ initial: initialRecord }: Props) {
             onChange={(e) => setForm((s) => ({ ...s, url: e.target.value }))}
             disabled={!editing}
             placeholder="e.g. https://acme.com"
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="storage-fee">Daily Storage Fee</Label>
+          <Input
+            id="storage-fee"
+            type="number"
+            min={7.5}
+            value={form.storageFee}
+            onChange={(e) => setForm((s) => ({ ...s, storageFee: e.target.value }))}
+            disabled={!editing}
+            placeholder="Input daily storage fee"
           />
         </div>
       </div>
