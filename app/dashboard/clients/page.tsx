@@ -7,7 +7,35 @@ export const metadata: Metadata = {
   description: "Browse and search clients",
 }
 
-export default async function ClientsPage() {
-  const { data } = await fetchClients({ page: 1, limit: 50, sortCredit: "desc" })
-  return <ClientsClient clients={data} />
+interface ClientsPageProps {
+  searchParams: Promise<{
+    page?: string
+    limit?: string
+    search?: string
+    sortCredit?: "asc" | "desc"
+  }>
+}
+
+export default async function ClientsPage({ searchParams }: ClientsPageProps) {
+  const params = await searchParams
+
+  const page = params.page ? parseInt(params.page, 10) : 1
+  const limit = params.limit ? parseInt(params.limit, 10) : 20
+  const search = params.search || undefined
+  const sortCredit = params.sortCredit || "desc"
+
+  const { data: clients, pagination } = await fetchClients({
+    page,
+    limit,
+    search,
+    sortCredit
+  })
+
+  return (
+    <ClientsClient
+      clients={clients}
+      pagination={pagination}
+      initialSearch={search}
+    />
+  )
 }

@@ -1,7 +1,7 @@
 "use server"
 
 import { apiFetch } from "./api";
-import type { ClientData, CreateClientRequest, CreateClientData, CustomerRow, SubmitClientFormData } from "@/lib/types";
+import type { ClientData, CreateClientRequest, CreateClientData, CustomerRow, SubmitClientFormData, PaginationMetadata } from "@/lib/types";
 
 export async function submitClientForm(clientData: SubmitClientFormData): Promise<{ success: boolean; error?: string }> {
   try {
@@ -110,19 +110,52 @@ export async function fetchClients(params?: { page?: number; limit?: number; sea
   if (params?.search) query.set("search", params.search);
   const base = "/customers";
   const suffix = query.size ? `?${query.toString()}&include=address` : `?include=address`;
+
   const [customersRes, loansRes, firearmsRes] = await Promise.all([
-    apiFetch<CustomerRow[]>(`${base}${suffix}`),
+    apiFetch<CustomerRow[] | { data: CustomerRow[]; pagination?: PaginationMetadata }>(`${base}${suffix}`),
     apiFetch<{ id: string; customer_id: string | null }[]>("/loans"),
-    // fetch firearms to determine per-customer booked out status/date
     apiFetch<Array<{ id: string; customers_id: string | null; booked_out: boolean | null; booked_out_date: string | null; created_at: string }>>("/firearms"),
   ]);
 
-  const customers = customersRes.ok && customersRes.data ? customersRes.data : [];
-  const pagination = { page: params?.page ?? 1, limit: params?.limit ?? 50, total: customers.length, totalPages: Math.ceil(customers.length / (params?.limit ?? 50)) };
+  let customers: CustomerRow[] = [];
+  let pagination: { page: number; limit: number; total: number; totalPages: number };
+
+  if (customersRes.ok && customersRes.data) {
+    if (Array.isArray(customersRes.data)) {
+      customers = customersRes.data;
+      const page = params?.page ?? 1;
+      const limit = params?.limit ?? 20;
+      const hasNextPage = customers.length === limit;
+      const estimatedTotal = hasNextPage ? page * limit + 1 : (page - 1) * limit + customers.length;
+
+      pagination = {
+        page,
+        limit,
+        total: estimatedTotal,
+        totalPages: hasNextPage ? page + 1 : page
+      };
+    } else {
+      const apiResponse = customersRes.data as { data: CustomerRow[]; pagination?: PaginationMetadata };
+      customers = apiResponse.data || [];
+      pagination = apiResponse.pagination || {
+        page: params?.page ?? 1,
+        limit: params?.limit ?? 20,
+        total: customers.length,
+        totalPages: Math.ceil(customers.length / (params?.limit ?? 20))
+      };
+    }
+  } else {
+    customers = [];
+    pagination = {
+      page: params?.page ?? 1,
+      limit: params?.limit ?? 20,
+      total: 0,
+      totalPages: 0
+    };
+  }
   const loans = loansRes.ok && loansRes.data ? loansRes.data : [];
   const firearms = firearmsRes.ok && firearmsRes.data ? firearmsRes.data : [];
 
-  // Build a map of customer_id -> { bookedOut, bookedOutDate } preferring most recent booked_out_date
   const firearmMap = new Map<string, { bookedOut: boolean; bookedOutDate: string | null }>();
   const latestDateMap = new Map<string, number>();
   for (const f of firearms) {

@@ -11,7 +11,7 @@ import { searchFirearms } from "@/actions/firearms"
 import { CreateFirearmDialog } from "@/components/firearms/createFirearmDialog"
 import type { EnhancedFirearmData } from "@/lib/types"
 
-export function FirearmsHeader({ onSortChange, onSearch, onSearchResults, className }: FirearmsHeaderProps) {
+export function FirearmsHeader({ onSortChange, onSearch, onSearchResults, onFilterChange, statusFilter = "all", className }: FirearmsHeaderProps) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
@@ -83,6 +83,22 @@ export function FirearmsHeader({ onSortChange, onSearch, onSearchResults, classN
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Status</span>
+          <Select
+            value={statusFilter}
+            onValueChange={(val: "all" | "booked" | "available") => {
+              onFilterChange?.(val)
+            }}
+          >
+            <SelectTrigger size="sm" aria-label="Filter by status">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="booked">Booked Out</SelectItem>
+              <SelectItem value="available">Available</SelectItem>
+            </SelectContent>
+          </Select>
           <span className="text-sm text-muted-foreground">Date Added</span>
           <Select
             value={sortOrder}
@@ -112,5 +128,7 @@ interface FirearmsHeaderProps {
   onSearch?: (query: string) => void
   onSearchResults?: (results: EnhancedFirearmData[] | null) => void
   onSortChange?: (order: "asc" | "desc") => void
+  onFilterChange?: (filter: "all" | "booked" | "available") => void
+  statusFilter?: "all" | "booked" | "available"
   className?: string
 }

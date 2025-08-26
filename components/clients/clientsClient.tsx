@@ -1,25 +1,36 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { ClientsHeader } from "@/components/clients/clientsHeader"
 import { ClientCard } from "@/components/clients/clientCard"
-import { ClientData } from "@/lib/types"
-import { fetchClients } from "@/actions/clients"
+import { Pagination } from "@/components/ui/pagination"
+import { ClientData, PaginationMetadata } from "@/lib/types"
 
-export function ClientsClient({ clients: initialClients }: { clients: ClientData[] }) {
-  const [clientsState, setClientsState] = useState<ClientData[]>(() => initialClients)
-  const [searchQuery, setSearchQuery] = useState("")
+interface ClientsClientProps {
+  clients: ClientData[]
+  pagination: PaginationMetadata
+  initialSearch?: string
+}
+
+export function ClientsClient({ clients: initialClients, pagination, initialSearch }: ClientsClientProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [searchQuery, setSearchQuery] = useState(initialSearch || "")
   const [searchResults, setSearchResults] = useState<ClientData[] | null>(null)
   const [isSearching, setIsSearching] = useState(false)
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
 
   const refreshClients = async () => {
     try {
-      const { data } = await fetchClients({ page: 1, limit: 50, sortCredit: sortOrder })
-      setClientsState(data)
       setSearchResults(null)
       setSearchQuery("")
+
+      // Update URL to remove search parameter and refresh the page
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete("search")
+      router.push(`/dashboard/clients?${params.toString()}`)
+      router.refresh()
     } catch (error) {
       console.error("Failed to refresh clients:", error)
       toast.error("Failed to refresh clients list")
@@ -27,11 +38,8 @@ export function ClientsClient({ clients: initialClients }: { clients: ClientData
   }
 
   const handleAddCredit = ({ idNumber, amount }: { idNumber: string; amount: number }) => {
-    setClientsState(prev => prev.map(c =>
-      c.idNumber === idNumber
-        ? { ...c, creditAmount: (c.creditAmount ?? 0) + amount }
-        : c
-    ))
+    // Credit addition will be handled by the server, so we just need to refresh
+    console.log("Credit added for client:", idNumber, "amount:", amount)
   }
 
   const handleCreditSuccess = async () => {
@@ -41,44 +49,39 @@ export function ClientsClient({ clients: initialClients }: { clients: ClientData
   const handleSearch = async (query: string) => {
     setSearchQuery(query)
 
+    const params = new URLSearchParams(searchParams.toString())
+
     if (!query.trim()) {
       setIsSearching(false)
       setSearchResults(null)
+      params.delete("search")
+      params.delete("page") // Reset to first page when clearing search
+      router.push(`/dashboard/clients?${params.toString()}`)
       return
     }
 
-    try {
-      setIsSearching(true)
-      // Prefer server-side search via fetchClients to preserve API-level sorting capability
-      const { data } = await fetchClients({ page: 1, limit: 50, search: query, sortCredit: sortOrder })
-      setSearchResults(data)
-    } catch (error) {
-      console.error("Search failed:", error)
-      setSearchResults([])
-    } finally {
-      setIsSearching(false)
-    }
+    params.set("search", query)
+    params.delete("page") // Reset to first page when searching
+    router.push(`/dashboard/clients?${params.toString()}`)
   }
 
   const list = useMemo(() => {
-    return searchResults !== null ? searchResults : clientsState
-  }, [clientsState, searchResults])
+    // When using server-side pagination, we use the initial data from the server
+    // searchResults is only used for client-side search display
+    return searchResults !== null ? searchResults : initialClients
+  }, [initialClients, searchResults])
 
   const handleSortChange = async (order: "asc" | "desc") => {
-    setSortOrder(order)
-    try {
-      const { data } = await fetchClients({ page: 1, limit: 50, sortCredit: order, search: searchQuery || undefined })
-      setClientsState(data)
-      // ensure we reflect server-sorted results; clear client-side search cache to avoid local sorting
-      if (searchQuery) {
-        setSearchResults(data)
-      } else {
-        setSearchResults(null)
-      }
-    } catch (e) {
-      console.error("Failed to apply sort on server:", e)
-      toast.error("Failed to sort by credit")
-    }
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("sortCredit", order)
+    params.delete("page") // Reset to first page when changing sort
+    router.push(`/dashboard/clients?${params.toString()}`)
+  }
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("page", String(page))
+    router.push(`/dashboard/clients?${params.toString()}`)
   }
 
   return (
@@ -107,6 +110,15 @@ export function ClientsClient({ clients: initialClients }: { clients: ClientData
           </div>
         )}
       </div>
+      {searchResults === null && pagination.totalPages > 1 && (
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          totalItems={pagination.total}
+          onPageChange={handlePageChange}
+          className="mt-6"
+        />
+      )}
     </div>
   )
 }
