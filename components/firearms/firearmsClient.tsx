@@ -64,6 +64,14 @@ export function FirearmsClient({ firearms, pagination, initialFilter }: Firearms
     router.push(`/dashboard/firearms?${params.toString()}`)
   }
 
+  const handleFirearmDeleted = () => {
+    router.refresh()
+  }
+
+  const handleFirearmUpdated = () => {
+    router.refresh()
+  }
+
   const displayData = useMemo(() => {
     return searchResults !== null ? searchResults : data
   }, [data, searchResults])
@@ -92,12 +100,15 @@ export function FirearmsClient({ firearms, pagination, initialFilter }: Firearms
           sorted.map((item, idx) => (
             <FirearmCard
               key={`${item.serialNumber}-${idx}`}
+              id={item.id}
               makeModel={item.makeModel}
               stockNumber={item.stockNumber}
               serialNumber={item.serialNumber}
               dateAdded={item.dateAdded}
               isBookedOut={item.bookedOut}
               bookedOutDate={item.bookedOutDate}
+              onDeleted={handleFirearmDeleted}
+              onUpdated={handleFirearmUpdated}
             />
           ))
         ) : (

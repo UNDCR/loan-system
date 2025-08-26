@@ -119,7 +119,7 @@ export function StorageCard({ entry, onDeleted }: { entry: StorageEntry; onDelet
           <DialogHeader>
             <DialogTitle>Book Firearm Out</DialogTitle>
             <DialogDescription>
-              This will delete the storage record and Book the firearm out
+              This will remove the storage record and Book the firearm out
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-2 py-2">
@@ -134,7 +134,7 @@ export function StorageCard({ entry, onDeleted }: { entry: StorageEntry; onDelet
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={deleting}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting || !selectedDate}>{deleting ? "Deleting..." : "Delete"}</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting || !selectedDate}>{deleting ? "Booking Out..." : "Book Out"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

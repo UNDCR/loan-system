@@ -214,8 +214,9 @@ export async function updateFirearm(firearmId: string, firearmData: Partial<{ ma
 
 export async function deleteFirearm(firearmId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const res = await apiFetch(`/firearms/${encodeURIComponent(firearmId)}`, {
-      method: "DELETE",
+    const res = await apiFetch(`/firearms/${encodeURIComponent(firearmId)}/delete`, {
+      method: "POST",
+      body: JSON.stringify({}),
     });
     if (!res.ok) return { success: false, error: res.error };
     return { success: true };

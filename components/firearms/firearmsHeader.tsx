@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useDebounceSearch } from "@/utils/useDebounceSearch"
 import { Search, X, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -13,39 +14,34 @@ import type { EnhancedFirearmData } from "@/lib/types"
 
 export function FirearmsHeader({ onSortChange, onSearch, onSearchResults, onFilterChange, statusFilter = "all", className }: FirearmsHeaderProps) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isSearching, setIsSearching] = useState(false)
 
-  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { query: searchQuery, setQuery: setSearchQuery, isSearching, clearResults } = useDebounceSearch<EnhancedFirearmData>({
+    searchFunction: async (q: string) => {
+      const res = await searchFirearms(q)
+      if (res.success) {
+        onSearchResults?.(res.data ?? [])
+      } else {
+        if (res.error) toast.error(res.error)
+        onSearchResults?.(null)
+      }
+      return res
+    },
+    debounceDelay: 600,
+    onError: (err) => toast.error(err)
+  })
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value
     setSearchQuery(query)
     onSearch?.(query)
 
     if (!query.trim()) {
-      setIsSearching(false)
       onSearchResults?.(null)
-      return
-    }
-
-    try {
-      setIsSearching(true)
-      const result = await searchFirearms(query.trim())
-      if (!result.success) {
-        if (result.error) toast.error(result.error)
-        onSearchResults?.(null)
-      } else {
-        onSearchResults?.(result.data ?? [])
-      }
-    } catch {
-      toast.error("Failed to search firearms")
-      onSearchResults?.(null)
-    } finally {
-      setIsSearching(false)
     }
   }
 
   const clear = () => {
-    setSearchQuery("")
+    clearResults()
     onSearch?.("")
     onSearchResults?.(null)
   }

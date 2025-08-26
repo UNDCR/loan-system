@@ -19,7 +19,6 @@ export function ClientsClient({ clients: initialClients, pagination, initialSear
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState(initialSearch || "")
   const [searchResults, setSearchResults] = useState<ClientData[] | null>(null)
-  const [isSearching, setIsSearching] = useState(false)
 
   const refreshClients = async () => {
     try {
@@ -52,7 +51,6 @@ export function ClientsClient({ clients: initialClients, pagination, initialSear
     const params = new URLSearchParams(searchParams.toString())
 
     if (!query.trim()) {
-      setIsSearching(false)
       setSearchResults(null)
       params.delete("search")
       params.delete("page") // Reset to first page when clearing search
@@ -66,15 +64,13 @@ export function ClientsClient({ clients: initialClients, pagination, initialSear
   }
 
   const list = useMemo(() => {
-    // When using server-side pagination, we use the initial data from the server
-    // searchResults is only used for client-side search display
     return searchResults !== null ? searchResults : initialClients
   }, [initialClients, searchResults])
 
   const handleSortChange = async (order: "asc" | "desc") => {
     const params = new URLSearchParams(searchParams.toString())
     params.set("sortCredit", order)
-    params.delete("page") // Reset to first page when changing sort
+    params.delete("page")
     router.push(`/dashboard/clients?${params.toString()}`)
   }
 
@@ -91,7 +87,6 @@ export function ClientsClient({ clients: initialClients, pagination, initialSear
         onSortChange={handleSortChange}
         onAddCredit={handleAddCredit}
         onCreditSuccess={handleCreditSuccess}
-        isSearching={isSearching}
         searchQuery={searchQuery}
         onClientCreated={refreshClients}
       />

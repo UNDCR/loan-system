@@ -3,39 +3,6 @@
 import { apiFetch } from "./api"
 import type { StorageEntry, StorageItemResponse, PaginationMetadata } from "@/lib/types"
 
-type StorageApiItem = {
-  id: string
-  firearm_id: string
-  customer_id: string
-  storage_type: string | null
-  created_at: string
-  firearms: {
-    id: string
-    make_model: string | null
-    stock_number: string | null
-    serial_number: string | null
-    created_at: string
-    update_at: string | null
-    booked_out: boolean | null
-    booked_out_date: string | null
-    bookin_date: string | null
-    bookout_date: string | null
-    customers_id: string | null
-    storage_id: string | null
-  } | null
-  customers: {
-    id: string
-    full_name: string | null
-    id_number: string | null
-    phone_number: string | null
-    email: string | null
-    firearm_id: string | null
-    customer_address_id: string | null
-    credit_amount: number | null
-    created_at: string
-  } | null
-}
-
 function mapStorageItem(item: StorageItemResponse): StorageEntry {
   return {
     id: item.id,
@@ -214,3 +181,35 @@ export async function deleteStorageEntry(id: string, bookout_date?: string): Pro
   }
 }
 
+type StorageApiItem = {
+  id: string
+  firearm_id: string
+  customer_id: string
+  storage_type: string | null
+  created_at: string
+  firearms: {
+    id: string
+    make_model: string | null
+    stock_number: string | null
+    serial_number: string | null
+    created_at: string
+    update_at: string | null
+    booked_out: boolean | null
+    booked_out_date: string | null
+    bookin_date: string | null
+    bookout_date: string | null
+    customers_id: string | null
+    storage_id: string | null
+  } | null
+  customers: {
+    id: string
+    full_name: string | null
+    id_number: string | null
+    phone_number: string | null
+    email: string | null
+    firearm_id: string | null
+    customer_address_id: string | null
+    credit_amount: number | null
+    created_at: string
+  } | null
+}
