@@ -1,26 +1,30 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Hash, Package } from "lucide-react"
-
-interface FirearmCardProps {
-  makeModel: string
-  stockNumber: string
-  serialNumber: string
-  dateAdded: string
-  isBookedOut: boolean
-  bookedOutDate?: string | null
-}
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Calendar, Hash, Package, Trash2, Edit } from "lucide-react"
+import { toast } from "sonner"
+import { deleteFirearm } from "@/actions/firearms"
+import { EditFirearmDialog } from "./editFirearmDialog"
 
 export default function FirearmCard({
+  id,
   makeModel,
   stockNumber,
   serialNumber,
   dateAdded,
   isBookedOut,
   bookedOutDate,
+  onDeleted,
+  onUpdated,
 }: FirearmCardProps) {
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -28,6 +32,29 @@ export default function FirearmCard({
       day: "numeric",
     })
   }
+
+  const handleDelete = async () => {
+    if (!id) return
+
+    try {
+      setIsDeleting(true)
+      const result = await deleteFirearm(id)
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to delete firearm")
+      }
+
+      toast.success("Firearm deleted successfully")
+      onDeleted?.(id)
+      setShowDeleteDialog(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete firearm")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+
 
   return (
     <Card className="bg-white dark:bg-stone-800">
@@ -74,8 +101,86 @@ export default function FirearmCard({
             </div>
           </div>
         </div>
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowEditDialog(true)}
+            className="gap-2"
+          >
+            <Edit className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowDeleteDialog(true)}
+            className="gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
       </CardContent>
-      
+
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-md" showCloseButton={!isDeleting}>
+          <DialogHeader>
+            <DialogTitle>Delete Firearm</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this firearm? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="bg-muted p-3 rounded-md">
+              <p className="text-sm font-medium">{makeModel}</p>
+              <p className="text-xs text-muted-foreground">Stock: {stockNumber}</p>
+              <p className="text-xs text-muted-foreground">Serial: {serialNumber}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <EditFirearmDialog
+        firearm={{
+          id,
+          makeModel,
+          stockNumber,
+          serialNumber,
+        }}
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        onUpdated={onUpdated}
+      />
+
     </Card>
   )
+}
+
+
+interface FirearmCardProps {
+  id: string
+  makeModel: string
+  stockNumber: string
+  serialNumber: string
+  dateAdded: string
+  isBookedOut: boolean
+  bookedOutDate?: string | null
+  onDeleted?: (id: string) => void
+  onUpdated?: (id: string) => void
 }

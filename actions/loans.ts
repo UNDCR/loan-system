@@ -1,10 +1,10 @@
 "use server"
 
 import { apiFetch } from "./api";
-import { CreateLoanInput, EnrichedLoan, LoanData } from "@/lib/types";
+import { CreateLoanInput, EnrichedLoan, LoanData, PaginationMetadata } from "@/lib/types";
 import { mapLoanToLoanData } from "@/lib/mappers/loan";
 
-export async function fetchLoans(params?: { page?: number; limit?: number; status?: LoanData["status"]; customer_search?: string }): Promise<{ data: LoanData[]; pagination: { page: number; limit: number; total: number; totalPages: number } } | { data: LoanData[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
+export async function fetchLoans(params?: { page?: number; limit?: number; status?: LoanData["status"]; customer_search?: string }): Promise<{ data: LoanData[]; pagination: PaginationMetadata }> {
   const query = new URLSearchParams();
   if (params?.page) query.set("page", String(params.page));
   if (params?.limit) query.set("limit", String(params.limit));
@@ -12,10 +12,50 @@ export async function fetchLoans(params?: { page?: number; limit?: number; statu
   if (params?.customer_search) query.set("customer_search", params.customer_search);
   const base = "/loans";
   const suffix = query.size ? `?${query.toString()}&include=customer,firearm` : `?include=customer,firearm`;
-  const res = await apiFetch<EnrichedLoan[]>(`${base}${suffix}`);
-  if (!res.ok || !res.data) return { data: [], pagination: { page: params?.page ?? 1, limit: params?.limit ?? 20, total: 0, totalPages: 0 } };
-  const loans = Array.isArray(res.data) ? res.data : [];
-  return { data: loans.map(mapLoanToLoanData), pagination: { page: params?.page ?? 1, limit: params?.limit ?? 20, total: loans.length, totalPages: Math.ceil(loans.length / (params?.limit ?? 20)) } };
+
+  const res = await apiFetch<EnrichedLoan[] | { data: EnrichedLoan[]; pagination?: PaginationMetadata }>(`${base}${suffix}`);
+
+  // Handle both array response and paginated response formats
+  let loans: EnrichedLoan[] = [];
+  let pagination: PaginationMetadata;
+
+  if (res.ok && res.data) {
+    if (Array.isArray(res.data)) {
+      // Direct array response - calculate pagination based on returned data
+      loans = res.data;
+      const page = params?.page ?? 1;
+      const limit = params?.limit ?? 20;
+      const hasNextPage = loans.length === limit;
+      const estimatedTotal = hasNextPage ? page * limit + 1 : (page - 1) * limit + loans.length;
+
+      pagination = {
+        page,
+        limit,
+        total: estimatedTotal,
+        totalPages: hasNextPage ? page + 1 : page
+      };
+    } else {
+      // Paginated response format
+      const apiResponse = res.data as { data: EnrichedLoan[]; pagination?: PaginationMetadata };
+      loans = apiResponse.data || [];
+      pagination = apiResponse.pagination || {
+        page: params?.page ?? 1,
+        limit: params?.limit ?? 20,
+        total: loans.length,
+        totalPages: Math.ceil(loans.length / (params?.limit ?? 20))
+      };
+    }
+  } else {
+    loans = [];
+    pagination = {
+      page: params?.page ?? 1,
+      limit: params?.limit ?? 20,
+      total: 0,
+      totalPages: 0
+    };
+  }
+
+  return { data: loans.map(mapLoanToLoanData), pagination };
 }
 
 export async function createLoan(input: CreateLoanInput): Promise<{ success: true; data: { id: string } } | { success: false; error?: string }> {

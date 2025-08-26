@@ -1,7 +1,7 @@
 "use server"
 
 import { apiFetch } from "./api";
-import type { FirearmWithRelations, EnhancedFirearmData } from "../lib/types";
+import type { FirearmWithRelations, EnhancedFirearmData, PaginatedResponse, PaginationParams, PaginationMetadata } from "../lib/types";
 
 function mapFirearmToEnhanced(firearm: FirearmWithRelations): EnhancedFirearmData {
   return {
@@ -67,11 +67,85 @@ function mapFirearmToEnhanced(firearm: FirearmWithRelations): EnhancedFirearmDat
   };
 }
 
-export async function fetchFirearmsWithRelations(): Promise<EnhancedFirearmData[]> {
-  const res = await apiFetch<FirearmWithRelations[]>("/firearms?include=customers,loans,storage");
+export type FirearmFilter = { booked_out?: boolean };
+
+export interface FirearmFetchParams extends PaginationParams {
+  filter?: FirearmFilter;
+  search?: string;
+}
+
+export async function fetchFirearmsWithRelations(filter?: FirearmFilter): Promise<EnhancedFirearmData[]> {
+  const params = new URLSearchParams({ include: "customers,loans,storage" });
+  if (typeof filter?.booked_out === "boolean") {
+    params.set("booked_out", String(filter.booked_out));
+  }
+  const res = await apiFetch<FirearmWithRelations[]>(`/firearms?${params.toString()}`);
   if (!res.ok || !res.data) return [];
 
   return res.data.map(mapFirearmToEnhanced);
+}
+
+export async function fetchFirearmsPaginated(params?: FirearmFetchParams): Promise<PaginatedResponse<EnhancedFirearmData>> {
+  const searchParams = new URLSearchParams({ include: "customers,loans,storage" });
+
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 20;
+
+  searchParams.set("page", String(page));
+  searchParams.set("limit", String(limit));
+
+  if (params?.search) searchParams.set("search", params.search);
+  if (typeof params?.filter?.booked_out === "boolean") {
+    searchParams.set("booked_out", String(params.filter.booked_out));
+  }
+
+  const res = await apiFetch<FirearmWithRelations[] | { data: FirearmWithRelations[]; pagination?: PaginationMetadata }>(`/firearms?${searchParams.toString()}`);
+
+  if (!res.ok || !res.data) {
+    return {
+      data: [],
+      pagination: {
+        page,
+        limit,
+        total: 0,
+        totalPages: 0
+      }
+    };
+  }
+
+  const apiResponse = res.data;
+
+  if (Array.isArray(apiResponse)) {
+    const firearms = apiResponse as FirearmWithRelations[];
+
+    const hasNextPage = firearms.length === limit;
+    const estimatedTotal = hasNextPage
+      ? page * limit + 1
+      : (page - 1) * limit + firearms.length;
+
+    return {
+      data: firearms.map(mapFirearmToEnhanced),
+      pagination: {
+        page,
+        limit,
+        total: estimatedTotal,
+        totalPages: hasNextPage ? page + 1 : page
+      }
+    };
+  }
+
+  const firearms = apiResponse.data || [];
+  const pagination = apiResponse.pagination || {
+    page,
+    limit,
+    total: firearms.length,
+    totalPages: Math.ceil(firearms.length / limit)
+  };
+
+  return {
+    data: firearms.map(mapFirearmToEnhanced),
+    pagination
+  };
 }
 
 export async function searchFirearms(term: string): Promise<{ success: true; data: EnhancedFirearmData[] } | { success: false; error?: string }> {
@@ -140,8 +214,9 @@ export async function updateFirearm(firearmId: string, firearmData: Partial<{ ma
 
 export async function deleteFirearm(firearmId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const res = await apiFetch(`/firearms/${encodeURIComponent(firearmId)}`, {
-      method: "DELETE",
+    const res = await apiFetch(`/firearms/${encodeURIComponent(firearmId)}/delete`, {
+      method: "POST",
+      body: JSON.stringify({}),
     });
     if (!res.ok) return { success: false, error: res.error };
     return { success: true };

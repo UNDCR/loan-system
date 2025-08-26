@@ -9,9 +9,10 @@ import { toast } from "sonner"
 import { toUpperCase } from "@/utils/textUtils"
 import { createStorageEntry, type CreateStoragePayload } from "@/actions/storage"
 import type { StorageEntry } from "@/lib/types"
-import { useClientSearch } from "@/hooks/useClientSearch"
+
 import { searchFirearms } from "@/actions/firearms"
 import type { EnhancedFirearmData, Customer } from "@/lib/types"
+import { useDebounceSearch } from "@/utils/useDebounceSearch"
 
 export function CreateStorageDialog({ open, onOpenChange, trigger, onCreated }: { open?: boolean; onOpenChange?: (v: boolean) => void; trigger?: React.ReactNode; onCreated?: (entry: StorageEntry) => void }) {
   const [internalOpen, setInternalOpen] = useState(false)
@@ -26,49 +27,76 @@ export function CreateStorageDialog({ open, onOpenChange, trigger, onCreated }: 
     bookout_date: "",
   })
 
-  const [firearmQuery, setFirearmQuery] = useState("")
-  const [firearmResults, setFirearmResults] = useState<EnhancedFirearmData[]>([])
-  const [isFirearmSearching, setIsFirearmSearching] = useState(false)
   const [selectedFirearm, setSelectedFirearm] = useState<EnhancedFirearmData | null>(null)
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
 
-  const {
-    searchInput: customerQuery,
-    setSearchInput: setCustomerQuery,
-    searchResults: customerResults,
-    isSearching: isCustomerSearching,
-    selectedCustomer,
-    selectCustomer,
-    clearSelection: clearCustomerSelection,
-  } = useClientSearch()
+  const firearmSearch = useDebounceSearch<EnhancedFirearmData>({
+    searchFunction: async (query: string) => {
+      const res = await searchFirearms(query)
+      return res
+    },
+    debounceDelay: 600,
+    onError: (error) => toast.error(error)
+  })
 
-  const handleFirearmSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const q = toUpperCase(e.target.value)
-    setFirearmQuery(q)
-    setSelectedFirearm(null)
-    if (!q.trim()) {
-      setFirearmResults([])
-      return
-    }
-    try {
-      setIsFirearmSearching(true)
-      const res = await searchFirearms(q.trim())
-      if (res.success) setFirearmResults(res.data)
-      else {
-        setFirearmResults([])
-        if (res.error) toast.error(res.error)
+  const customerSearch = useDebounceSearch<Customer>({
+    searchFunction: async (query: string) => {
+      const { searchClientsByName, searchClientsByIdNumber } = await import("@/actions/search")
+      const isIdNumber = /^\d+$/.test(query.trim())
+      const res = isIdNumber
+        ? await searchClientsByIdNumber(query.trim())
+        : await searchClientsByName(query.trim())
+
+      if (res.success && res.data) {
+        const customers: Customer[] = res.data.map(client => ({
+          id: client.id || client.idNumber,
+          full_name: client.fullName,
+          email: client.email,
+          phone_number: client.phoneNumber,
+          id_number: client.idNumber,
+          created_at: "",
+          firearm_id: null,
+          customer_address_id: null,
+          address: null
+        }))
+        return { success: true, data: customers, error: undefined }
       }
-    } catch {
-      setFirearmResults([])
-      toast.error("Failed to search firearms")
-    } finally {
-      setIsFirearmSearching(false)
-    }
+      return { success: false, data: undefined, error: res.error || "Search failed" }
+    },
+    debounceDelay: 600,
+    onError: (error) => toast.error(error)
+  })
+
+
+
+  const handleFirearmSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const q = toUpperCase(e.target.value)
+    firearmSearch.setQuery(q)
+    setSelectedFirearm(null)
+  }
+
+  const selectCustomer = (customer: Customer) => {
+    customerSearch.stopSearch()
+    setSelectedCustomer(customer)
+    customerSearch.clearResults()
+  }
+
+  const clearCustomerSelection = () => {
+    customerSearch.stopSearch()
+    setSelectedCustomer(null)
+    customerSearch.clearResults()
   }
 
   const pickFirearm = (f: EnhancedFirearmData) => {
+    firearmSearch.stopSearch()
     setSelectedFirearm(f)
-    setFirearmQuery(`${f.makeModel} • ${f.stockNumber || "-"} • ${f.serialNumber || "-"}`)
-    setFirearmResults([])
+    firearmSearch.clearResults()
+  }
+
+  const clearFirearmSelection = () => {
+    firearmSearch.stopSearch()
+    setSelectedFirearm(null)
+    firearmSearch.clearResults()
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,7 +122,8 @@ export function CreateStorageDialog({ open, onOpenChange, trigger, onCreated }: 
       setOpen(false)
       setFormData({ storage_type: "", bookin_date: "", bookout_date: "" })
       setSelectedFirearm(null)
-      setFirearmQuery("")
+      firearmSearch.stopSearch()
+      firearmSearch.clearResults()
       clearCustomerSelection()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to create storage entry")
@@ -119,21 +148,23 @@ export function CreateStorageDialog({ open, onOpenChange, trigger, onCreated }: 
                 <div className="relative">
                   <Input
                     id="firearm_search"
-                    value={firearmQuery}
+                    value={firearmSearch.query}
                     onChange={handleFirearmSearch}
                     placeholder="Search serial, stock, or make/model"
                     aria-label="Search firearm"
+                    disabled={!!selectedFirearm}
+                    className={selectedFirearm ? "opacity-60 cursor-not-allowed" : ""}
                     required
                   />
-                  {isFirearmSearching && (
+                  {firearmSearch.isSearching && !selectedFirearm && (
                     <div className="absolute right-2 top-2.5 text-muted-foreground">
                       <span className="animate-pulse">…</span>
                     </div>
                   )}
-                  {!!firearmResults.length && (
+                  {!!firearmSearch.results.length && !selectedFirearm && (
                     <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow">
                       <ul className="max-h-60 overflow-auto text-sm">
-                        {firearmResults.map((f) => (
+                        {firearmSearch.results.map((f) => (
                           <li key={f.id}>
                             <button
                               type="button"
@@ -150,7 +181,15 @@ export function CreateStorageDialog({ open, onOpenChange, trigger, onCreated }: 
                   )}
                 </div>
                 {selectedFirearm && (
-                  <div className="mt-2 rounded-md border bg-card p-3 shadow-sm">
+                  <div className="mt-2 rounded-md border bg-card p-3 shadow-sm relative">
+                    <button
+                      type="button"
+                      onClick={clearFirearmSelection}
+                      className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+                      aria-label="Clear firearm selection"
+                    >
+                      ×
+                    </button>
                     <div className="text-sm font-medium">{selectedFirearm.makeModel || "Unknown"}</div>
                     <div className="text-xs text-muted-foreground mt-1">
                       <span className="font-medium">Stock:</span> {selectedFirearm.stockNumber || "-"}
@@ -165,21 +204,27 @@ export function CreateStorageDialog({ open, onOpenChange, trigger, onCreated }: 
                 <div className="relative">
                   <Input
                     id="customer_search"
-                    value={customerQuery}
-                    onChange={(e) => setCustomerQuery(toUpperCase(e.target.value))}
+                    value={customerSearch.query}
+                    onChange={(e) => {
+                      const q = toUpperCase(e.target.value)
+                      customerSearch.setQuery(q)
+                      setSelectedCustomer(null)
+                    }}
                     placeholder="Search name or ID number"
                     aria-label="Search customer"
+                    disabled={!!selectedCustomer}
+                    className={selectedCustomer ? "opacity-60 cursor-not-allowed" : ""}
                     required
                   />
-                  {isCustomerSearching && (
+                  {customerSearch.isSearching && !selectedCustomer && (
                     <div className="absolute right-2 top-2.5 text-muted-foreground">
                       <span className="animate-pulse">…</span>
                     </div>
                   )}
-                  {!!customerResults.length && (
+                  {!!customerSearch.results.length && !selectedCustomer && (
                     <div className="absolute z-10 mt-1 w-full rounded-md border bg-popover shadow">
                       <ul className="max-h-60 overflow-auto text-sm">
-                        {customerResults.map((c: Customer) => (
+                        {customerSearch.results.map((c: Customer) => (
                           <li key={c.id}>
                             <button
                               type="button"
@@ -196,7 +241,15 @@ export function CreateStorageDialog({ open, onOpenChange, trigger, onCreated }: 
                   )}
                 </div>
                 {selectedCustomer && (
-                  <div className="mt-2 rounded-md border bg-card p-3 shadow-sm">
+                  <div className="mt-2 rounded-md border bg-card p-3 shadow-sm relative">
+                    <button
+                      type="button"
+                      onClick={clearCustomerSelection}
+                      className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"
+                      aria-label="Clear customer selection"
+                    >
+                      ×
+                    </button>
                     <div className="text-sm font-medium">{selectedCustomer.full_name || "Unknown"}</div>
                     <div className="text-xs text-muted-foreground mt-1">
                       <span className="font-medium">ID:</span> {selectedCustomer.id_number || "-"}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useDebounceSearch } from "@/utils/useDebounceSearch"
 import { Search, X, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -11,41 +12,36 @@ import { searchFirearms } from "@/actions/firearms"
 import { CreateFirearmDialog } from "@/components/firearms/createFirearmDialog"
 import type { EnhancedFirearmData } from "@/lib/types"
 
-export function FirearmsHeader({ onSortChange, onSearch, onSearchResults, className }: FirearmsHeaderProps) {
+export function FirearmsHeader({ onSortChange, onSearch, onSearchResults, onFilterChange, statusFilter = "all", className }: FirearmsHeaderProps) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isSearching, setIsSearching] = useState(false)
 
-  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { query: searchQuery, setQuery: setSearchQuery, isSearching, clearResults } = useDebounceSearch<EnhancedFirearmData>({
+    searchFunction: async (q: string) => {
+      const res = await searchFirearms(q)
+      if (res.success) {
+        onSearchResults?.(res.data ?? [])
+      } else {
+        if (res.error) toast.error(res.error)
+        onSearchResults?.(null)
+      }
+      return res
+    },
+    debounceDelay: 600,
+    onError: (err) => toast.error(err)
+  })
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value
     setSearchQuery(query)
     onSearch?.(query)
 
     if (!query.trim()) {
-      setIsSearching(false)
       onSearchResults?.(null)
-      return
-    }
-
-    try {
-      setIsSearching(true)
-      const result = await searchFirearms(query.trim())
-      if (!result.success) {
-        if (result.error) toast.error(result.error)
-        onSearchResults?.(null)
-      } else {
-        onSearchResults?.(result.data ?? [])
-      }
-    } catch {
-      toast.error("Failed to search firearms")
-      onSearchResults?.(null)
-    } finally {
-      setIsSearching(false)
     }
   }
 
   const clear = () => {
-    setSearchQuery("")
+    clearResults()
     onSearch?.("")
     onSearchResults?.(null)
   }
@@ -83,6 +79,22 @@ export function FirearmsHeader({ onSortChange, onSearch, onSearchResults, classN
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Status</span>
+          <Select
+            value={statusFilter}
+            onValueChange={(val: "all" | "booked" | "available") => {
+              onFilterChange?.(val)
+            }}
+          >
+            <SelectTrigger size="sm" aria-label="Filter by status">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="booked">Booked Out</SelectItem>
+              <SelectItem value="available">Available</SelectItem>
+            </SelectContent>
+          </Select>
           <span className="text-sm text-muted-foreground">Date Added</span>
           <Select
             value={sortOrder}
@@ -112,5 +124,7 @@ interface FirearmsHeaderProps {
   onSearch?: (query: string) => void
   onSearchResults?: (results: EnhancedFirearmData[] | null) => void
   onSortChange?: (order: "asc" | "desc") => void
+  onFilterChange?: (filter: "all" | "booked" | "available") => void
+  statusFilter?: "all" | "booked" | "available"
   className?: string
 }

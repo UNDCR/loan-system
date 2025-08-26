@@ -1,40 +1,7 @@
 "use server"
 
 import { apiFetch } from "./api"
-import type { StorageEntry, StorageItemResponse } from "@/lib/types"
-
-type StorageApiItem = {
-  id: string
-  firearm_id: string
-  customer_id: string
-  storage_type: string | null
-  created_at: string
-  firearms: {
-    id: string
-    make_model: string | null
-    stock_number: string | null
-    serial_number: string | null
-    created_at: string
-    update_at: string | null
-    booked_out: boolean | null
-    booked_out_date: string | null
-    bookin_date: string | null
-    bookout_date: string | null
-    customers_id: string | null
-    storage_id: string | null
-  } | null
-  customers: {
-    id: string
-    full_name: string | null
-    id_number: string | null
-    phone_number: string | null
-    email: string | null
-    firearm_id: string | null
-    customer_address_id: string | null
-    credit_amount: number | null
-    created_at: string
-  } | null
-}
+import type { StorageEntry, StorageItemResponse, PaginationMetadata } from "@/lib/types"
 
 function mapStorageItem(item: StorageItemResponse): StorageEntry {
   return {
@@ -106,14 +73,64 @@ function mapStorageItemFromListApi(item: StorageApiItem): StorageEntry {
   }
 }
 
-export async function fetchStorageEntries(params?: { page?: number; limit?: number }): Promise<StorageEntry[]> {
+export async function fetchStorageEntries(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  storage_type?: string;
+  sort?: "asc" | "desc"
+}): Promise<{ data: StorageEntry[]; pagination: PaginationMetadata }> {
   const qs: string[] = []
   if (params?.page) qs.push(`page=${params.page}`)
   if (params?.limit) qs.push(`limit=${params.limit}`)
+  if (params?.search) qs.push(`search=${encodeURIComponent(params.search)}`)
+  if (params?.storage_type) qs.push(`storage_type=${encodeURIComponent(params.storage_type)}`)
+  if (params?.sort) qs.push(`sort=${params.sort}`)
   const query = qs.length ? `?${qs.join("&")}` : ""
-  const res = await apiFetch<StorageApiItem[]>(`/storage${query}`)
-  if (!res.ok || !res.data) return []
-  return res.data.map(mapStorageItemFromListApi)
+
+  const res = await apiFetch<StorageApiItem[] | { data: StorageApiItem[]; pagination?: PaginationMetadata }>(`/storage${query}`)
+
+  // Handle both array response and paginated response formats
+  let storageItems: StorageApiItem[] = []
+  let pagination: PaginationMetadata
+
+  if (res.ok && res.data) {
+    if (Array.isArray(res.data)) {
+      // Direct array response - calculate pagination based on returned data
+      storageItems = res.data
+      const page = params?.page ?? 1
+      const limit = params?.limit ?? 20
+      const hasNextPage = storageItems.length === limit
+      const estimatedTotal = hasNextPage ? page * limit + 1 : (page - 1) * limit + storageItems.length
+
+      pagination = {
+        page,
+        limit,
+        total: estimatedTotal,
+        totalPages: hasNextPage ? page + 1 : page
+      }
+    } else {
+      // Paginated response format
+      const apiResponse = res.data as { data: StorageApiItem[]; pagination?: PaginationMetadata }
+      storageItems = apiResponse.data || []
+      pagination = apiResponse.pagination || {
+        page: params?.page ?? 1,
+        limit: params?.limit ?? 20,
+        total: storageItems.length,
+        totalPages: Math.ceil(storageItems.length / (params?.limit ?? 20))
+      }
+    }
+  } else {
+    storageItems = []
+    pagination = {
+      page: params?.page ?? 1,
+      limit: params?.limit ?? 20,
+      total: 0,
+      totalPages: 0
+    }
+  }
+
+  return { data: storageItems.map(mapStorageItemFromListApi), pagination }
 }
 
 export async function fetchStorageById(id: string): Promise<StorageEntry | null> {
@@ -164,3 +181,35 @@ export async function deleteStorageEntry(id: string, bookout_date?: string): Pro
   }
 }
 
+type StorageApiItem = {
+  id: string
+  firearm_id: string
+  customer_id: string
+  storage_type: string | null
+  created_at: string
+  firearms: {
+    id: string
+    make_model: string | null
+    stock_number: string | null
+    serial_number: string | null
+    created_at: string
+    update_at: string | null
+    booked_out: boolean | null
+    booked_out_date: string | null
+    bookin_date: string | null
+    bookout_date: string | null
+    customers_id: string | null
+    storage_id: string | null
+  } | null
+  customers: {
+    id: string
+    full_name: string | null
+    id_number: string | null
+    phone_number: string | null
+    email: string | null
+    firearm_id: string | null
+    customer_address_id: string | null
+    credit_amount: number | null
+    created_at: string
+  } | null
+}
