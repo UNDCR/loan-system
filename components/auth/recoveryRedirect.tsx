@@ -10,11 +10,19 @@ export default function RecoveryRedirect() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const hash = window.location.hash;
-    if (!hash) return;
-    const isRecovery = /(?:^|[&#?])type=recovery(?:&|$)/.test(hash);
-    if (!isRecovery) return;
+    const search = window.location.search;
+
+    const hasHash = !!hash;
+    const hasSearch = !!search;
+
+    const isRecoveryInHash = hasHash && /(?:^|[&#?])type=recovery(?:&|$)/.test(hash);
+    const isRecoveryInSearch = hasSearch && new URLSearchParams(search).get("type") === "recovery";
+
+    if (!isRecoveryInHash && !isRecoveryInSearch) return;
     if (pathname === "/auth/update-password") return;
-    router.replace(`/auth/update-password${hash}`);
+
+    const suffix = isRecoveryInHash ? hash : search;
+    router.replace(`/auth/update-password${suffix}`);
   }, [pathname, router]);
 
   return null;

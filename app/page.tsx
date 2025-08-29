@@ -32,14 +32,14 @@ export default function Home() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <a href="/auth/login">Get Started</a>
+                <a href="/auth/login">Already have an account?</a>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <a href="#contact">Contact</a>
+                <a href="tel:+27681501196">Contact</a>
               </Button>
             </div>
             <div className="text-sm text-muted-foreground">
-              To enroll please contact Sheldon at 068 150 1196
+              To enroll please email us at support@firearmstudio.com
             </div>
           </div>
           <div className="grid gap-4">
@@ -129,11 +129,11 @@ export default function Home() {
             <div>
               <h2 className="text-xl font-medium">Enrollment</h2>
               <p className="text-muted-foreground">
-                To enroll please contact Sheldon at 068 150 1196
+                To enroll send us an email at support@firearmstudio.com
               </p>
             </div>
             <Button asChild size="lg">
-              <a href="tel:0681501196">Call Sheldon</a>
+              <a href="mailto:support@firearmstudio.com">Email Support</a>
             </Button>
           </CardContent>
         </Card>
