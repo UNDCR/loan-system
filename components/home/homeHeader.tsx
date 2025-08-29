@@ -8,7 +8,7 @@ export function HomeHeader() {
           <div className="flex items-center gap-2">
             <AuthButton />
           </div>
-          <div className="text-sm text-muted-foreground">Firearm Suite</div>
+          <div className="text-sm text-muted-foreground">Firearm Studio</div>
         </div>
       </div>
     </header>

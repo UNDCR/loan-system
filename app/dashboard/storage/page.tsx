@@ -3,7 +3,7 @@ import { StorageClient } from "@/components/storage/storageClient"
 import { fetchStorageEntries } from "@/actions/storage"
 
 export const metadata: Metadata = {
-  title: "Storage | Firearm Suite",
+  title: "Storage | Firearm Studio",
   description: "View firearms currently in storage",
 }
 

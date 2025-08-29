@@ -3,7 +3,7 @@ import { ClientsClient } from "@/components/clients/clientsClient"
 import { fetchClients } from "@/actions/clients"
 
 export const metadata: Metadata = {
-  title: "Clients | Firearm Firearm Suite",
+  title: "Clients | Firearm Firearm Studio",
   description: "Browse and search clients",
 }
 

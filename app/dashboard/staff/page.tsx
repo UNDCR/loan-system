@@ -3,7 +3,7 @@ import { fetchStaff } from "@/actions/admin"
 import { StaffClient } from "@/components/staffMembers/staffClient"
 
 export const metadata: Metadata = {
-  title: "Staff | Firearm Suite",
+  title: "Staff | Firearm Studio",
   description: "Manage and view staff members",
 }
 

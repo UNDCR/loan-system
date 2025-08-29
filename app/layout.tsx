@@ -6,7 +6,7 @@ import { AuthProvider } from "@/components/providers/authProvider";
 import RecoveryRedirect from "@/components/auth/recoveryRedirect";
 
 export const metadata: Metadata = {
-  title: "Firearm Suite",
+  title: "Firearm Studio",
   description: "Manage firearm loans with ease",
 };
 

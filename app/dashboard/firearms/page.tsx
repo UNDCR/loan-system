@@ -3,7 +3,7 @@ import { FirearmsClient } from "@/components/firearms/firearmsClient"
 import { fetchFirearmsPaginated, FirearmFilter } from "@/actions/firearms"
 
 export const metadata: Metadata = {
-  title: "Firearms | Firearm Firearm Suite",
+  title: "Firearms | Firearm Firearm Studio",
   description: "Browse and search firearms",
 }
 

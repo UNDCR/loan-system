@@ -4,7 +4,7 @@ import { fetchLoans } from "@/actions/loans";
 import { LoanStatus } from "@/lib/types";
 
 export const metadata: Metadata = {
-  title: "Loans | Firearm Firearm Suite",
+  title: "Loans | Firearm Firearm Studio",
   description: "Manage and track all firearm loans in one place",
 };
 
