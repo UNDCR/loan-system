@@ -32,7 +32,7 @@ export default function Home() {
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground max-w-prose">
               Track loans and storage, manage firearm book-ins
-              and book-outs, send automated reminders via Email and WhatsApp, and
+              and book-outs, send automated reminders via Email and SMS, and
               empower your team with robust staff management.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -64,7 +64,7 @@ export default function Home() {
                   </div>
                   <div className="flex items-center gap-2 rounded-md border p-3">
                     <MessageSquare className="h-4 w-4" />
-                    <span>WhatsApp</span>
+                    <span>SMS</span>
                   </div>
                 </CardContent>
               </Card>
@@ -80,7 +80,7 @@ export default function Home() {
                   </div>
                   <div className="flex items-center gap-2 rounded-md border p-3">
                     <MessageSquare className="h-4 w-4" />
-                    <span>WhatsApp</span>
+                    <span>SMS</span>
                   </div>
                 </CardContent>
               </Card>
@@ -135,7 +135,6 @@ export default function Home() {
         <div className="mb-6 space-y-2">
           <Badge>How it works</Badge>
           <h2 className="text-3xl font-semibold tracking-tight">Loan and Storage Information</h2>
-          <p className="text-muted-foreground">Clear, user-friendly explanations of the business rules and processes.</p>
         </div>
         <Card>
           <CardContent className="p-6">
@@ -158,7 +157,7 @@ export default function Home() {
                     <CardContent className="text-sm text-muted-foreground">
                       <ul className="list-disc space-y-2 pl-5">
                         <li>Installments are due monthly until the loan balance is settled.</li>
-                        <li>Monthly reminders are automatically sent to users about pending payment amounts via Email and WhatsApp.</li>
+                        <li>Monthly reminders are automatically sent to users about pending payment amounts via Email and SMS.</li>
                       </ul>
                     </CardContent>
                   </Card>
